@@ -1,3 +1,4 @@
+import os
 import pygame
 import random
 
@@ -16,10 +17,16 @@ clock = pygame.time.Clock()
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
+# Set up the paths to image files
+cwd = os.getcwd()
+player_img_path = os.path.join(cwd, "player.png")
+enemy_img_path = os.path.join(cwd, "enemy.png")
+bullet_img_path = os.path.join(cwd, "bullet.png")
+
 # Load images
-player_img = pygame.image.load("player.png")
-enemy_img = pygame.image.load("enemy.png")
-bullet_img = pygame.image.load("bullet.png")
+player_img = pygame.image.load(player_img_path)
+enemy_img = pygame.image.load(enemy_img_path)
+bullet_img = pygame.image.load(bullet_img_path)
 
 # Set up the player
 player_speed = 5
@@ -62,50 +69,35 @@ while running:
         player_x -= player_speed
     elif keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
         player_x += player_speed
+      # Handle enemy movement
+enemy_y += enemy_speed
 
-    # Handle enemy movement
-    enemy_y += enemy_speed
-    if enemy_y > HEIGHT:
+# Handle bullet movement
+for i, bullet in enumerate(bullets):
+    bullet_x, bullet_y = bullet
+    bullet_y -= bullet_speed
+    bullets[i] = (bullet_x, bullet_y)
+
+# Handle collision detection
+for bullet in bullets:
+    bullet_x, bullet_y = bullet
+    if (bullet_y < enemy_y + enemy_height and bullet_x > enemy_x and 
+        bullet_x < enemy_x + enemy_width):
+        bullets.remove(bullet)
         enemy_x = random.randint(0, WIDTH - enemy_width)
         enemy_y = -enemy_height
-        score += 10
+        score += 1
 
-    # Handle bullet movement
-    for bullet in bullets:
-        bullet_x, bullet_y = bullet
-        bullet_y -= bullet_speed
-        if bullet_y < 0:
-            bullets.remove(bullet)
-        else:
-            # Check for collisions with enemy
-            if enemy_x < bullet_x < enemy_x + enemy_width and enemy_y < bullet_y < enemy_y + enemy_height:
-                enemy_x = random.randint(0, WIDTH - enemy_width)
-                enemy_y = -enemy_height
-                bullets.remove(bullet)
-                score += 100
+# Draw everything
+screen.fill(BLACK)
+screen.blit(player_img, (player_x, player_y))
+screen.blit(enemy_img, (enemy_x, enemy_y))
+for bullet in bullets:
+    screen.blit(bullet_img, bullet)
+score_text = font.render(f"Score: {score}", True, WHITE)
+screen.blit(score_text, (10, 10))
+pygame.display.update()
 
-    # Draw the background
-    screen.fill(BLACK)
-
-    # Draw the player
-    screen.blit(player_img, (player_x, player_y))
-
-    # Draw the enemy
-    screen.blit(enemy_img, (enemy_x, enemy_y))
-
-    # Draw the bullets
-    for bullet in bullets:
-        bullet_x, bullet_y = bullet
-        screen.blit(bullet_img, (bullet_x, bullet_y))
-
-    # Draw the score
-    score_text = font.render(f"Score: {score}", True, WHITE)
-    screen.blit(score_text, (10, 10))
-
-    # Update the display
-    pygame.display.flip()
-
-    # Wait for the next frame
-    clock.tick(60)
-
-# Clean up Pygame
+# Set the framerate
+clock.tick(60)
+pygame.quit()
